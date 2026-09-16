@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkilledVLA: Integrating Classical Skills into Vision-Language-Action Models</title>
+<meta name="description" content="SkilledVLA integrates classical robotic skills into Vision-Language-Action models.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14181c;
+    --paper:#f6f5f2;
+    --panel:#eceae4;
+    --line:#d9d6cd;
+    --steel:#3c5a6b;
+    --signal:#c25b2e;
+    --muted:#5b6168;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--steel);}
+  a:hover{color:var(--signal);}
+
+  .wrap{max-width:860px;margin:0 auto;padding:0 24px;}
+
+  header.hero{
+    border-bottom:1px solid var(--line);
+    padding:88px 0 56px;
+  }
+  .tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--steel);
+    letter-spacing:0.02em;
+    margin:0 0 20px;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:clamp(30px,4.4vw,46px);
+    line-height:1.12;
+    margin:0 0 28px;
+    max-width:14ch;
+  }
+  .authors{
+    font-size:16px;
+    margin:0 0 6px;
+  }
+  .authors a{text-decoration:none;border-bottom:1px solid var(--line);}
+  .affil{
+    font-size:14px;
+    color:var(--muted);
+    margin:0 0 32px;
+  }
+  .links{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .links a{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:14px;
+    font-weight:500;
+    text-decoration:none;
+    color:var(--ink);
+    background:var(--panel);
+    border:1px solid var(--line);
+    padding:9px 16px;
+    border-radius:3px;
+  }
+  .links a:hover{
+    border-color:var(--steel);
+    color:var(--steel);
+  }
+
+  main section{
+    padding:52px 0;
+    border-bottom:1px solid var(--line);
+  }
+  main section:last-of-type{border-bottom:none;}
+
+  h2{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:22px;
+    margin:0 0 20px;
+  }
+  p{margin:0 0 16px;color:var(--ink);}
+  .lede{font-size:17px;max-width:70ch;}
+
+  .figure{
+    margin:32px 0;
+    border:1px solid var(--line);
+    background:var(--panel);
+    border-radius:3px;
+    padding:36px 24px;
+    text-align:center;
+  }
+  .figure .placeholder-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .figure img{max-width:100%;display:block;margin:0 auto;border-radius:2px;}
+  figcaption{
+    font-size:13px;
+    color:var(--muted);
+    margin-top:14px;
+    max-width:60ch;
+    margin-left:auto;
+    margin-right:auto;
+  }
+
+  .grid3{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+    margin-top:8px;
+  }
+  @media (max-width:640px){.grid3{grid-template-columns:1fr;}}
+  .grid3 .card{
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:20px;
+    background:var(--panel);
+  }
+  .grid3 .card h3{
+    font-size:15px;
+    margin:0 0 8px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+  }
+  .grid3 .card p{font-size:14px;margin:0;color:var(--muted);}
+
+  pre{
+    background:#101418;
+    color:#d8dde2;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    padding:22px;
+    border-radius:4px;
+    overflow-x:auto;
+    line-height:1.55;
+  }
+  pre .kw{color:#e0a05c;}
+  pre .str{color:#9fb8a6;}
+
+  footer{
+    padding:36px 0 64px;
+    font-size:13px;
+    color:var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="tag">Anonymous submission</p>
+    <h1>SkilledVLA: Integrating Classical Skills into Vision-Language-Action Models</h1>
+    <p class="affil">Author names and affiliations withheld for double-blind review.</p>
+    <div class="links">
+      <a href="#">Paper (PDF)</a>
+      <a href="#">Code (anonymized)</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section id="abstract">
+    <div class="wrap">
+      <h2>Abstract</h2>
+      <p class="lede">
+        Replace this paragraph with your abstract. Vision-Language-Action (VLA) models learn
+        end-to-end policies directly from demonstrations, but often struggle to reproduce the
+        precision and reliability of classical, model-based robotic skills on tasks that demand
+        them. This paper introduces SkilledVLA, a framework for integrating classical skills —
+        motion primitives, controllers, or planners — into a VLA model, so that the model can
+        decide when to invoke a learned end-to-end behavior versus a classical skill, and how to
+        parameterize it from visual and language context.
+      </p>
+    </div>
+  </section>
+
+  <section id="teaser">
+    <div class="wrap">
+      <div class="figure">
+        <span class="placeholder-label">[ teaser figure — replace with an image showing your pipeline or a task rollout ]</span>
+      </div>
+      <figcaption>Figure 1: Overview of SkilledVLA. Replace this caption with a description of what the figure shows.</figcaption>
+    </div>
+  </section>
+
+  <section id="method">
+    <div class="wrap">
+      <h2>Method</h2>
+      <p>
+        Replace this section with a description of your approach: how classical skills are
+        represented, how the VLA model selects and parameterizes them, and how the system is
+        trained end-to-end.
+      </p>
+      <div class="grid3">
+        <div class="card">
+          <h3>Skill library</h3>
+          <p>Describe the set of classical skills the model can call.</p>
+        </div>
+        <div class="card">
+          <h3>Skill selection</h3>
+          <p>Describe how the VLA model decides which skill to invoke and when.</p>
+        </div>
+        <div class="card">
+          <h3>Parameterization</h3>
+          <p>Describe how visual and language context configure a skill at inference time.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="results">
+    <div class="wrap">
+      <h2>Results</h2>
+      <p>Summarize your key quantitative and qualitative results here.</p>
+      <div class="figure">
+        <span class="placeholder-label">[ results figure or table — replace with your data ]</span>
+      </div>
+      <figcaption>Figure 2: Replace with a caption describing your results figure.</figcaption>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Project page for anonymous double-blind review. Author details, BibTeX, and any identifying links will be added after the review period.</p>
+  </div>
+</footer>
+
+</body>
+</html>
