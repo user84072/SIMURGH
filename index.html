@@ -1,250 +1,542 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SkilledVLA: Integrating Classical Skills into Vision-Language-Action Models</title>
-<meta name="description" content="SkilledVLA integrates classical robotic skills into Vision-Language-Action models.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --ink:#14181c;
-    --paper:#f6f5f2;
-    --panel:#eceae4;
-    --line:#d9d6cd;
-    --steel:#3c5a6b;
-    --signal:#c25b2e;
-    --muted:#5b6168;
-  }
-  *{box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-  body{
-    margin:0;
-    background:var(--paper);
-    color:var(--ink);
-    font-family:'Inter',system-ui,sans-serif;
-    line-height:1.6;
-    -webkit-font-smoothing:antialiased;
-  }
-  a{color:var(--steel);}
-  a:hover{color:var(--signal);}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SkilledVLA: Integrating Classical Skills into Vision-Language-Action Models</title>
+  <meta name="description" content="SkilledVLA adds a classifier head and target heads to a pretrained VLA so it can invoke classical skills at its native inference rate.">
 
-  .wrap{max-width:860px;margin:0 auto;padding:0 24px;}
+  <meta property="og:title" content="SkilledVLA: Integrating Classical Skills into Vision-Language-Action Models">
+  <meta property="og:description" content="Classical skills inside a VLA's action space. 5% to 60% on real-robot pong toss, 20% to 50% on toast prepare.">
+  <meta property="og:image" content="static/images/eval_tasks_grid.png">
+  <meta name="twitter:card" content="summary_large_image">
 
-  header.hero{
-    border-bottom:1px solid var(--line);
-    padding:88px 0 56px;
-  }
-  .tag{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:13px;
-    color:var(--steel);
-    letter-spacing:0.02em;
-    margin:0 0 20px;
-  }
-  h1{
-    font-family:'Fraunces',serif;
-    font-weight:600;
-    font-size:clamp(30px,4.4vw,46px);
-    line-height:1.12;
-    margin:0 0 28px;
-    max-width:14ch;
-  }
-  .authors{
-    font-size:16px;
-    margin:0 0 6px;
-  }
-  .authors a{text-decoration:none;border-bottom:1px solid var(--line);}
-  .affil{
-    font-size:14px;
-    color:var(--muted);
-    margin:0 0 32px;
-  }
-  .links{
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px;
-  }
-  .links a{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    font-size:14px;
-    font-weight:500;
-    text-decoration:none;
-    color:var(--ink);
-    background:var(--panel);
-    border:1px solid var(--line);
-    padding:9px 16px;
-    border-radius:3px;
-  }
-  .links a:hover{
-    border-color:var(--steel);
-    color:var(--steel);
-  }
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-  main section{
-    padding:52px 0;
-    border-bottom:1px solid var(--line);
-  }
-  main section:last-of-type{border-bottom:none;}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 
-  h2{
-    font-family:'Fraunces',serif;
-    font-weight:600;
-    font-size:22px;
-    margin:0 0 20px;
-  }
-  p{margin:0 0 16px;color:var(--ink);}
-  .lede{font-size:17px;max-width:70ch;}
-
-  .figure{
-    margin:32px 0;
-    border:1px solid var(--line);
-    background:var(--panel);
-    border-radius:3px;
-    padding:36px 24px;
-    text-align:center;
-  }
-  .figure .placeholder-label{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:13px;
-    color:var(--muted);
-  }
-  .figure img{max-width:100%;display:block;margin:0 auto;border-radius:2px;}
-  figcaption{
-    font-size:13px;
-    color:var(--muted);
-    margin-top:14px;
-    max-width:60ch;
-    margin-left:auto;
-    margin-right:auto;
-  }
-
-  .grid3{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:20px;
-    margin-top:8px;
-  }
-  @media (max-width:640px){.grid3{grid-template-columns:1fr;}}
-  .grid3 .card{
-    border:1px solid var(--line);
-    border-radius:3px;
-    padding:20px;
-    background:var(--panel);
-  }
-  .grid3 .card h3{
-    font-size:15px;
-    margin:0 0 8px;
-    font-family:'Inter',sans-serif;
-    font-weight:600;
-  }
-  .grid3 .card p{font-size:14px;margin:0;color:var(--muted);}
-
-  pre{
-    background:#101418;
-    color:#d8dde2;
-    font-family:'IBM Plex Mono',monospace;
-    font-size:13px;
-    padding:22px;
-    border-radius:4px;
-    overflow-x:auto;
-    line-height:1.55;
-  }
-  pre .kw{color:#e0a05c;}
-  pre .str{color:#9fb8a6;}
-
-  footer{
-    padding:36px 0 64px;
-    font-size:13px;
-    color:var(--muted);
-  }
-</style>
+  <link rel="stylesheet" href="static/css/style.css">
+  <script defer src="static/js/main.js"></script>
 </head>
 <body>
 
-<header class="hero">
-  <div class="wrap">
-    <p class="tag">Anonymous submission</p>
-    <h1>SkilledVLA: Integrating Classical Skills into Vision-Language-Action Models</h1>
-    <p class="affil">Author names and affiliations withheld for double-blind review.</p>
-    <div class="links">
-      <a href="#">Paper (PDF)</a>
-      <a href="#">Code (anonymized)</a>
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a class="brand" href="#top">SkilledVLA</a>
+    <div class="topnav-links">
+      <a href="#highlights">Videos</a>
+      <a href="#compare">Comparison</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#method">Method</a>
+      <a href="#results">Results</a>
+      <a href="#bibtex">BibTeX</a>
     </div>
+  </div>
+</nav>
+
+<!-- ============================== HERO ============================== -->
+<header class="hero" id="top">
+  <h1 class="title">SkilledVLA</h1>
+  <h2 class="subtitle">Integrating Classical Skills into Vision-Language-Action Models</h2>
+
+  <div class="authors">
+    <span class="author">Anonymous Authors</span>
+  </div>
+  <div class="venue">Under review</div>
+
+  <div class="link-buttons">
+    <a class="btn" href="static/pdf/paper.pdf" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15H6z M14 2v6h6" /></svg>Paper
+    </a>
+    <a class="btn disabled" href="#" title="Coming soon">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z M8 9h8 M8 13h8 M8 17h5" /></svg>arXiv
+    </a>
+    <a class="btn" href="#video">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>Video
+    </a>
+    <a class="btn" href="#bibtex">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z M9 8h6 M9 12h6" /></svg>BibTeX
+    </a>
   </div>
 </header>
 
 <main>
-  <section id="abstract">
-    <div class="wrap">
-      <h2>Abstract</h2>
-      <p class="lede">
-        Replace this paragraph with your abstract. Vision-Language-Action (VLA) models learn
-        end-to-end policies directly from demonstrations, but often struggle to reproduce the
-        precision and reliability of classical, model-based robotic skills on tasks that demand
-        them. This paper introduces SkilledVLA, a framework for integrating classical skills —
-        motion primitives, controllers, or planners — into a VLA model, so that the model can
-        decide when to invoke a learned end-to-end behavior versus a classical skill, and how to
-        parameterize it from visual and language context.
-      </p>
-    </div>
-  </section>
 
-  <section id="teaser">
-    <div class="wrap">
-      <div class="figure">
-        <span class="placeholder-label">[ teaser figure — replace with an image showing your pipeline or a task rollout ]</span>
-      </div>
-      <figcaption>Figure 1: Overview of SkilledVLA. Replace this caption with a description of what the figure shows.</figcaption>
-    </div>
-  </section>
+<!-- ============================== TEASER VIDEO ============================== -->
+<section class="section" id="video">
+  <div class="video-slot hero-video" data-label="Main submission video">
+    <video controls playsinline preload="metadata">
+      <source src="static/videos/teaser.mp4" type="video/mp4">
+    </video>
+  </div>
+</section>
 
-  <section id="method">
-    <div class="wrap">
-      <h2>Method</h2>
-      <p>
-        Replace this section with a description of your approach: how classical skills are
-        represented, how the VLA model selects and parameterizes them, and how the system is
-        trained end-to-end.
-      </p>
-      <div class="grid3">
-        <div class="card">
-          <h3>Skill library</h3>
-          <p>Describe the set of classical skills the model can call.</p>
-        </div>
-        <div class="card">
-          <h3>Skill selection</h3>
-          <p>Describe how the VLA model decides which skill to invoke and when.</p>
-        </div>
-        <div class="card">
-          <h3>Parameterization</h3>
-          <p>Describe how visual and language context configure a skill at inference time.</p>
-        </div>
-      </div>
+<!-- ============================== TL;DR ============================== -->
+<section class="section">
+  <div class="headline-stats">
+    <div class="stat">
+      <div class="stat-num"><span class="from">5%</span><span class="arrow">&rarr;</span><span class="to">60%</span></div>
+      <div class="stat-label">Real G1 pong toss<br><small>vs. vanilla fine-tuned GR00T</small></div>
     </div>
-  </section>
+    <div class="stat">
+      <div class="stat-num"><span class="from">20%</span><span class="arrow">&rarr;</span><span class="to">50%</span></div>
+      <div class="stat-label">Real G1 toast prepare<br><small>vs. vanilla fine-tuned GR00T</small></div>
+    </div>
+    <div class="stat">
+      <div class="stat-num"><span class="from">53%</span><span class="arrow">&rarr;</span><span class="to">74%</span></div>
+      <div class="stat-label">6 DexMimicGen sim tasks<br><small>average, two embodiments</small></div>
+    </div>
+  </div>
+</section>
 
-  <section id="results">
-    <div class="wrap">
-      <h2>Results</h2>
-      <p>Summarize your key quantitative and qualitative results here.</p>
-      <div class="figure">
-        <span class="placeholder-label">[ results figure or table — replace with your data ]</span>
+<!-- ============================== HIGHLIGHTS ============================== -->
+<section class="section" id="highlights">
+  <h2 class="center">SkilledVLA in Action</h2>
+  <h3 class="center sub">Real Unitree G1 <span class="tag">success rate vs. vanilla GR00T</span></h3>
+  <div class="video-grid two">
+      <div class="video-card ours">
+        <div class="video-slot" data-label="static/videos/real/skilled_pong.mp4">
+          <video autoplay loop muted playsinline controls preload="metadata">
+            <source src="static/videos/real/skilled_pong.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="video-caption"><b>Pong toss</b> <span class="pill ok">success</span><br>Pick up, force-verified handoff, then a ballistic toss into the box. <span class="delta">5% &rarr; 60%</span></div>
       </div>
-      <figcaption>Figure 2: Replace with a caption describing your results figure.</figcaption>
+      <div class="video-card ours">
+        <div class="video-slot" data-label="static/videos/real/skilled_toast.mp4">
+          <video autoplay loop muted playsinline controls preload="metadata">
+            <source src="static/videos/real/skilled_toast.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="video-caption"><b>Toast prepare</b> <span class="pill ok">success</span><br>Scoop the slice, open the oven with the spatula arm locked, load and close. <span class="delta">20% &rarr; 50%</span></div>
+      </div>
+  </div>
+
+  <h3 class="center sub">Simulation <span class="tag">DexMimicGen</span></h3>
+  <div class="video-grid three">
+    <div class="video-card">
+      <div class="video-slot zoom-threading" data-label="static/videos/sim/threading.mp4">
+        <video autoplay loop muted playsinline preload="metadata">
+          <source src="static/videos/sim/threading.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="video-caption"><b>Threading</b> <span class="emb">Panda</span><br>Pass the needle's bar through the tripod's ring. <span class="delta">42% &rarr; 82%</span></div>
     </div>
-  </section>
+    <div class="video-card">
+      <div class="video-slot" data-label="static/videos/sim/assembly.mp4">
+        <video autoplay loop muted playsinline preload="metadata">
+          <source src="static/videos/sim/assembly.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="video-caption"><b>Three-Piece Assembly</b> <span class="emb">Panda</span><br>Seat piece 1 in the base, then piece 2 on top, and release. <span class="delta">62% &rarr; 80%</span></div>
+    </div>
+    <div class="video-card">
+      <div class="video-slot" data-label="static/videos/sim/transport.mp4">
+        <video autoplay loop muted playsinline preload="metadata">
+          <source src="static/videos/sim/transport.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="video-caption"><b>Transport</b> <span class="emb">Panda</span><br>Remove the lid, hand the hammer across, clear the trash. <span class="delta">26% &rarr; 36%</span></div>
+    </div>
+    <div class="video-card">
+      <div class="video-slot zoom-gr1" data-label="static/videos/sim/coffee.mp4">
+        <video autoplay loop muted playsinline preload="metadata">
+          <source src="static/videos/sim/coffee.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="video-caption"><b>Coffee</b> <span class="emb">GR-1</span><br>Seat the pod in the machine and shut the lid over it. <span class="delta">20% &rarr; 54%</span></div>
+    </div>
+    <div class="video-card">
+      <div class="video-slot zoom-gr1" data-label="static/videos/sim/pouring.mp4">
+        <video autoplay loop muted playsinline preload="metadata">
+          <source src="static/videos/sim/pouring.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="video-caption"><b>Pouring</b> <span class="emb">GR-1</span><br>Pour the ball into the bowl, then place the bowl on the pad. <span class="delta">70% &rarr; 94%</span></div>
+    </div>
+    <div class="video-card">
+      <div class="video-slot zoom-gr1" data-label="static/videos/sim/can_sort.mp4">
+        <video autoplay loop muted playsinline preload="metadata">
+          <source src="static/videos/sim/can_sort.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="video-caption"><b>Can Sort</b> <span class="emb">GR-1</span><br>Hand the can across and drop it in the bin of matching color. <span class="delta">100% &rarr; 100%</span></div>
+    </div>
+  </div>
+  <p class="center muted small">Arrows show vanilla GR00T &rarr; SkilledVLA success rate.</p>
+</section>
+
+<!-- ============================== HEAD-TO-HEAD ============================== -->
+<section class="section" id="compare">
+  <h2 class="center">Head-to-Head on the Real Robot</h2>
+  <p class="narrow">
+    A Unitree G1 humanoid with Dex1 grippers, a head-mounted RealSense D435 and two wrist RealSense D405s.
+    In <b>pong toss</b> the robot picks up a ball with the left hand, hands it to the right, and throws it into a
+    box. In <b>toast prepare</b> it picks up a spatula, scoops a slice of bread, opens a toaster oven, loads
+    the slice and closes the door. Each method gets 20 trials per task, trained from 45 teleoperated demos.
+  </p>
+
+  <!-- Task tabs: a 2x2 grid of the four methods per task. -->
+  <div class="tabs" data-tabs="real">
+    <button class="tab active" data-tab="pong">Pong toss</button>
+    <button class="tab" data-tab="toast">Toast prepare</button>
+  </div>
+
+  <div class="tab-panel active" data-panel="pong">
+    <div class="video-grid two">
+      <div class="video-card ours">
+        <div class="video-slot" data-label="static/videos/real/skilled_pong.mp4">
+          <video controls muted playsinline preload="metadata">
+            <source src="static/videos/real/skilled_pong.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="video-caption"><b>SkilledVLA</b> <span class="pill ok">success</span><br>Pick up, force-verified handoff, ballistic toss.</div>
+      </div>
+      <div class="video-card">
+        <div class="video-slot" data-label="static/videos/real/vanilla_pong.mp4">
+          <video controls muted playsinline preload="metadata">
+            <source src="static/videos/real/vanilla_pong.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="video-caption"><b>Vanilla GR00T</b> <span class="pill bad">failure</span><br>Pick up and handoff succeed; the ball is dropped instead of tossed.</div>
+      </div>
+      <div class="video-card">
+        <div class="video-slot" data-label="static/videos/real/pi05_pong.mp4">
+          <video controls muted playsinline preload="metadata">
+            <source src="static/videos/real/pi05_pong.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="video-caption"><b>&pi;<sub>0.5</sub>-H</b> <span class="pill bad">failure</span><br>The giver opens before the receiver closes.</div>
+      </div>
+      <div class="video-card">
+        <div class="video-slot" data-label="static/videos/real/vlmorch_pong.mp4">
+          <video controls muted playsinline preload="metadata">
+            <source src="static/videos/real/vlmorch_pong.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="video-caption"><b>VLM-orch</b> <span class="pill bad">failure</span><br>The receiver never closes during the handoff; the ball drops.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" data-panel="toast">
+    <div class="video-grid two">
+      <div class="video-card ours">
+        <div class="video-slot" data-label="static/videos/real/skilled_toast.mp4">
+          <video controls muted playsinline preload="metadata">
+            <source src="static/videos/real/skilled_toast.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="video-caption"><b>SkilledVLA</b> <span class="pill ok">success</span><br><code>lockout</code> holds the spatula arm steady while the other arm opens the oven.</div>
+      </div>
+      <div class="video-card">
+        <div class="video-slot" data-label="static/videos/real/vanilla_toast.mp4">
+          <video controls muted playsinline preload="metadata">
+            <source src="static/videos/real/vanilla_toast.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="video-caption"><b>Vanilla GR00T</b> <span class="pill bad">failure</span><br>Scoops the slice, but never opens the oven.</div>
+      </div>
+      <div class="video-card">
+        <div class="video-slot" data-label="static/videos/real/pi05_toast.mp4">
+          <video controls muted playsinline preload="metadata">
+            <source src="static/videos/real/pi05_toast.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="video-caption"><b>&pi;<sub>0.5</sub>-H</b> <span class="pill bad">failure</span><br>Struggles to grasp the spatula and the oven handle.</div>
+      </div>
+      <div class="video-card">
+        <div class="video-slot" data-label="static/videos/real/vlmorch_toast.mp4">
+          <video controls muted playsinline preload="metadata">
+            <source src="static/videos/real/vlmorch_toast.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="video-caption"><b>VLM-orch</b> <span class="pill bad">failure</span><br>Scoops the slice, then calls <code>Done</code> with the oven still shut.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== ABSTRACT ============================== -->
+<section class="section narrow" id="abstract">
+  <h2>Abstract</h2>
+  <p>
+    Vision-language-action models (VLAs) are a powerful tool for robot control, presenting a unified
+    architecture that can learn to solve a wide range of tasks and generalize to novel scenes and
+    instructions without requiring human-engineered controllers. However, by embracing end-to-end learned
+    control, VLAs discard decades of progress in classical robotics, along with the speed, reliability, and
+    efficiency of classical solutions. In this work, we seek to combine the generalizability of VLAs with
+    the performance of classical skills. We present <b>SkilledVLA</b>, a system that adds the ability to
+    invoke classical skills directly into a VLA. SkilledVLA modifies a traditional VLA by adding two
+    auxiliary outputs: a <em>classifier</em> head, which selects which skill (if any) to invoke, and a set
+    of <em>target</em> heads to parameterize the classical skills. By directly incorporating skill use into
+    the action space of the VLA, we seamlessly integrate classical skills at the VLA's native inference
+    rate. When evaluated on a real Unitree G1, SkilledVLA raises end-to-end success from 5% to 60% on a
+    bimanual ballistic toss task and from 20% to 50% on a long-horizon toast-preparation task. Against a
+    suite of six DexMimicGen simulation tasks across two embodiments, the same architecture outperforms a
+    vanilla fine-tuned VLA, a hierarchical VLA, and a VLM orchestrator. Gains were most obvious in the
+    tasks where tolerance was the tightest.
+  </p>
+</section>
+
+<!-- ============================== OVERVIEW FIGURE ============================== -->
+<section class="section">
+  <figure class="figure">
+    <div class="img-slot" data-label="Fig. 1 — static/images/overview.png">
+      <img src="static/images/overview.png" alt="SkilledVLA rollout vs. vanilla GR00T with end-effector trajectories">
+    </div>
+    <figcaption>
+      SkilledVLA on rollout vs. a vanilla fine-tuned VLA (GR00T), and their end-effector trajectories.
+      <b>Top:</b> SkilledVLA runs the VLA, calls the classical <em>handoff</em> skill, then calls the
+      <em>toss</em> skill, landing the ball in the green bin. <b>Bottom:</b> the pure VLA picks up the
+      ping-pong ball and hands it from the left to the right gripper, but fails the toss.
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ============================== MOTIVATION ============================== -->
+<section class="section narrow">
+  <h2>Why combine VLAs with classical skills?</h2>
+  <p>
+    Classical model-based controllers bring precision, force control, verifiable guarantees and high-speed
+    rollouts, but they have to be re-engineered whenever the scene or instruction changes. VLAs generalize
+    across objects, scenes and instructions, but lack the precision, reactivity and consistency of classical
+    solutions. With action chunking, for example, a VLA's reaction speed is bounded by its chunk length.
+  </p>
+  <div class="compare-cards">
+    <div class="card accent">
+      <h3>SkilledVLA</h3>
+      <p>A per-arm library of closed-loop, self-verifying classical skills, dispatched from inside the VLA at its native rate.</p>
+    </div>
+    <div class="card">
+      <h3>VLM-as-orchestrator</h3>
+      <p>Calls a skill library from a VLM. Limited by long VLM inference times and cannot replan at high frequency.</p>
+    </div>
+    <div class="card">
+      <h3>Hierarchical VLAs</h3>
+      <p>e.g. &pi;<sub>0.5</sub>. A high-level planner conditions a <em>learned</em> low-level expert, so learned-control limits remain.</p>
+    </div>
+    <div class="card">
+      <h3>Hybrid action spaces</h3>
+      <p>e.g. HYDRA, SPHINX. Switch to a classical planner for a single skill (large motions), without feedback.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== METHOD ============================== -->
+<section class="section" id="method">
+  <h2 class="center">Method</h2>
+
+  <figure class="figure">
+    <div class="img-slot" data-label="Fig. 2 — static/images/system_overview.png">
+      <img src="static/images/system_overview.png" alt="SkilledVLA system overview diagram">
+    </div>
+    <figcaption>
+      <b>System overview.</b> The VLA backbone consumes camera observations, the language instruction and
+      proprioception. Its pooled features feed the flow-matching action head and the auxiliary heads. The
+      <em>classifier</em> head determines which controller to use, and the <em>target</em> heads output
+      conditioning information for each controller.
+    </figcaption>
+  </figure>
+
+  <div class="narrow">
+    <h3>Skills as a natural extension of the VLA action space</h3>
+    <p>
+      We split the controller $f : O \to A$ into two stages: <b>skill selection</b> $S : O \to (i, G_i)$,
+      and the <b>skill controller</b> $C_i : (O, G_i) \to A$. A modified VLA predicts the skill index, the VLA
+      target, and a target for every classical skill at once:
+    </p>
+    <div class="equation">$$ i,\; g_{t_\text{VLA}},\; g_{t_0},\; g_{t_1},\; \dots,\; g_{t_n} = \pi_\theta(o_t), \qquad a_t = C_i(o_t, g_{t_i}) $$</div>
+    <p>
+      Under this formulation, the VLA action head is treated just like the classical skills: it predicts
+      target information (an action chunk of delta goal poses) that a low-level impedance controller
+      executes. SkilledVLA simply gives the VLA <em>more</em> low-level controllers to choose from.
+    </p>
+
+    <h3>Auxiliary heads</h3>
+    <p>
+      The <em>classifier</em> and <em>target</em> heads are two-layer MLPs on the backbone's pooled
+      vision-language and state features $z$. One classifier per arm predicts which skill (including the
+      VLA) controls that arm. The target heads predict a 9-D target (position plus two rotation-matrix rows)
+      under a masked L1 loss that is active only inside goal-bearing skill windows. A stop-gradient keeps
+      the auxiliary losses out of the backbone:
+    </p>
+    <div class="equation">$$ \mathcal{L} = \mathcal{L}_{\mathrm{FM}} + \mathrm{CE}\big(h_{\text{classifier}}(\mathrm{sg}(z))\big) + \lambda\,\mathrm{L1}\big(h_{\text{target}}(\mathrm{sg}(z))\big), \quad \lambda = 10 $$</div>
+
+    <h3>Dispatch, arbitration and handback</h3>
+    <div class="pipeline">
+      <div class="step"><span class="step-n">1</span><b>Debounce</b><p>A skill fires only after winning the per-arm argmax on two consecutive inference calls.</p></div>
+      <div class="step"><span class="step-n">2</span><b>Pre-conditions</b><p>The object exists (segmentation score), an object is in hand for handoff and toss, goals are clamped to the workspace, and the toss is ballistically feasible.</p></div>
+      <div class="step"><span class="step-n">3</span><b>Bimanual agreement</b><p>Both arms' classifiers must select the same bimanual skill.</p></div>
+      <div class="step"><span class="step-n">4</span><b>Stuck-abort &amp; handback</b><p>If a skill gets stuck or times out, control returns to the classifier's next-best choice.</p></div>
+    </div>
+
+    <h3>Skill library</h3>
+    <div class="table-wrap">
+      <table class="results skills">
+        <thead>
+          <tr><th>Class</th><th>Controller</th><th>Target</th><th>Sim</th><th>Real</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>none</code> (VLA)</td><td>policy (GR00T)</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="y">&#10003;</td></tr>
+          <tr><td><code>pick_up</code></td><td>antipodal grasp, then lift</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="y">&#10003;</td></tr>
+          <tr><td><code>move_to</code></td><td>collision-free reach (cuRobo in sim)</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="y">&#10003;</td></tr>
+          <tr><td><code>insertion</code></td><td>align gate, spiral search</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="n">&#10007;</td></tr>
+          <tr><td><code>handoff</code></td><td>force-verified exchange</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="y">&#10003;</td></tr>
+          <tr><td><code>lockout</code></td><td>hold pose</td><td class="n">&#10007;</td><td class="y">&#10003;</td><td class="y">&#10003;</td></tr>
+          <tr><td><code>toss</code></td><td>closed-form ballistic release</td><td class="y">&#10003;</td><td class="n">&#10007;</td><td class="y">&#10003;</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== TASKS ============================== -->
+<section class="section">
+  <h2 class="center">Evaluation Tasks</h2>
+  <figure class="figure">
+    <div class="img-slot" data-label="static/images/eval_tasks_grid.png">
+      <img src="static/images/eval_tasks_grid.png" alt="Eight evaluation tasks: first and last step">
+    </div>
+    <figcaption>
+      The eight evaluation tasks, showing the first step (top) and last step (bottom). Left: three GR-1 and
+      three Panda DexMimicGen simulation tasks. Right: two real Unitree G1 tasks.
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ============================== DETAILED RESULTS ============================== -->
+<section class="section" id="results">
+  <h2 class="center">Detailed Results</h2>
+
+  <h3 class="center sub">Real robot</h3>
+  <figure class="figure">
+    <div class="img-slot" data-label="Fig. 4 — static/images/pong_filmstrip.png">
+      <img src="static/images/pong_filmstrip.png" alt="SkilledVLA pong-toss filmstrip with per-arm controller bands">
+    </div>
+    <figcaption>
+      One SkilledVLA pong-toss rollout (head camera, left to right). The bands show which controller drives
+      each arm: GR00T by default (white), then <code>pick_up</code> on the left arm (green), a bimanual
+      <code>handoff</code> on both arms (purple), and a ballistic <code>toss</code> on the right arm (red),
+      after which control returns to GR00T.
+    </figcaption>
+  </figure>
+
+  <div class="narrow">
+    <h3>Stage-wise success</h3>
+    <p class="muted">Each stage is scored out of the trials that reached it.</p>
+    <div class="table-wrap">
+      <table class="results">
+        <thead>
+          <tr><th>Stage</th><th>Vanilla</th><th class="ours">SkilledVLA</th><th>&pi;<sub>0.5</sub>-H</th><th>VLM-orch</th></tr>
+        </thead>
+        <tbody>
+          <tr class="group"><td colspan="5">Pong toss</td></tr>
+          <tr><td>pick up</td><td>20/20</td><td class="ours">16/20</td><td>19/20</td><td>20/20</td></tr>
+          <tr><td>handoff</td><td>17/20</td><td class="ours">16/16</td><td>4/19</td><td>17/20</td></tr>
+          <tr><td>toss</td><td>1/17</td><td class="ours">12/16</td><td>0/4</td><td>10/17</td></tr>
+          <tr class="total"><td>overall</td><td>5%</td><td class="ours best">60%</td><td>0%</td><td>50%</td></tr>
+          <tr class="group"><td colspan="5">Toast prepare</td></tr>
+          <tr><td>pick up</td><td>19/20</td><td class="ours">19/20</td><td>13/20</td><td>14/20</td></tr>
+          <tr><td>open</td><td>12/19</td><td class="ours">17/19</td><td>5/13</td><td>10/14</td></tr>
+          <tr><td>load</td><td>5/12</td><td class="ours">10/17</td><td>1/5</td><td>2/10</td></tr>
+          <tr class="total"><td>overall</td><td>20%</td><td class="ours best">50%</td><td>5%</td><td>10%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Vanilla GR00T completes every pick up and most handoffs, but turns only 1 of its 17 completed handoffs
+      into a successful toss. A well-timed throw needs coordinated position and velocity control, which is
+      hard for a VLA's chunked goal-pose actions. SkilledVLA solves the ballistics directly and tracks the
+      launch with a high-frequency control loop. On toast, a dedicated <code>pick_up</code> on the oven
+      handle, with the spatula arm in <code>lockout</code>, stops the bread from shaking off while the door
+      opens.
+    </p>
+  </div>
+
+  <h3 class="center sub" id="sim">Simulation</h3>
+  <p class="narrow">
+    Six bimanual DexMimicGen tasks across two embodiments in MuJoCo/robosuite: two Panda arms with parallel
+    grippers (threading, three-piece assembly, transport) and the GR-1 humanoid with dexterous hands (coffee,
+    pouring, can sort). Each task is fine-tuned on 300 generated demos and evaluated over 50 seeded rollouts
+    with identical spawns across methods.
+  </p>
+
+  <div class="two-col">
+    <div>
+      <h3>Success over 50 rollouts per task</h3>
+      <div class="table-wrap">
+        <table class="results">
+          <thead>
+            <tr><th>Task</th><th>Embod.</th><th>Vanilla</th><th class="ours">SkilledVLA</th><th>&pi;<sub>0.5</sub>-H</th><th>VLM-orch</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>can_sort</td><td>GR-1</td><td class="best">100%</td><td class="ours best">100%</td><td>88%</td><td>98%</td></tr>
+            <tr><td>assembly</td><td>Panda</td><td>62%</td><td class="ours best">80%</td><td>14%</td><td>38%</td></tr>
+            <tr><td>threading</td><td>Panda</td><td>42%</td><td class="ours">82%</td><td>10%</td><td class="best">84%</td></tr>
+            <tr><td>transport</td><td>Panda</td><td>26%</td><td class="ours best">36%</td><td>32%</td><td>8%</td></tr>
+            <tr><td>pouring</td><td>GR-1</td><td>70%</td><td class="ours best">94%</td><td>74%</td><td>0%</td></tr>
+            <tr><td>coffee</td><td>GR-1</td><td>20%</td><td class="ours best">54%</td><td>48%</td><td>6%</td></tr>
+            <tr class="total"><td>total</td><td></td><td>53%</td><td class="ours best">74%</td><td>44%</td><td>39%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <figure class="figure tight">
+      <div class="img-slot" data-label="static/images/success_bars.png">
+        <img src="static/images/success_bars.png" alt="Success-rate bar chart for all methods and tasks">
+      </div>
+    </figure>
+  </div>
+
+  <div class="narrow">
+    <p>
+      SkilledVLA's largest gains over vanilla GR00T come on the tightest-tolerance tasks, threading and
+      coffee. &pi;<sub>0.5</sub>-H receives identical supervision and decodes the right subtasks, yet trails
+      on the Panda insertion tasks, which points to its learned low-level skills rather than phase
+      prediction. The VLM orchestrator has the same skills and the same VLA, but struggles to compose them;
+      it wins only on threading, where the insertion skill's robustness carries the task.
+    </p>
+  </div>
+</section>
+
+<!-- ============================== LIMITATIONS ============================== -->
+<section class="section narrow" id="limitations">
+  <h2>Limitations &amp; Future Work</h2>
+  <ul class="bullets">
+    <li>Each classical skill has to be engineered individually. Many already exist, but new ones take time to build.</li>
+    <li>The skill vocabulary is fixed at training time. A skill added after fine-tuning requires re-fine-tuning the VLA.</li>
+    <li>Per-frame skill labels are VLM-assisted but human-reviewed, which adds some effort.</li>
+    <li>Dexterous-hand grasping remains hard. The simulated dexterous grasps are hand-designed stand-ins that a stronger grasp planner could replace.</li>
+  </ul>
+  <p>
+    Future directions include scaling the skill library, carrying the approach over to locomotion, and
+    fine-tuning the skill heads with reinforcement learning.
+  </p>
+</section>
+
+<!-- ============================== BIBTEX ============================== -->
+<section class="section narrow" id="bibtex">
+  <h2>BibTeX</h2>
+  <div class="bibtex">
+    <button class="copy-btn" type="button" data-copy="#bibtex-text">Copy</button>
+<pre id="bibtex-text">@inproceedings{skilledvla2026,
+  title     = {SkilledVLA: Integrating Classical Skills into Vision-Language-Action Models},
+  author    = {Anonymous Authors},
+  booktitle = {Under review},
+  year      = {2026}
+}</pre>
+  </div>
+</section>
 
 </main>
 
-<footer>
-  <div class="wrap">
-    <p>Project page for anonymous double-blind review. Author details, BibTeX, and any identifying links will be added after the review period.</p>
-  </div>
+<footer class="footer">
+  <p>&copy; 2026 The SkilledVLA authors.</p>
 </footer>
 
 </body>
